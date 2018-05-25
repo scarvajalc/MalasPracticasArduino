@@ -44,12 +44,12 @@ ADXL345 adxl = ADXL345();
 int accX, accY, accZ;
 
 //wifi
-String ssid ="yourSSID";
-String password="yourPassword";
-SoftwareSerial esp(6, 7);// RX, TX
+String ssid ="Luzsanti";
+String password="$F4M1L14c4Rv$";
+SoftwareSerial esp(10, 11);// RX, TX
 String data;
-string apiToken;
-string authToken;
+String apiToken;
+String authToken;
 String server = "things.ubidots.com";
 String uri = "/api/v1.6/variables/5b006c77c03f97528bbaf5fb/values";
 
@@ -183,6 +183,7 @@ void printBpReport(){
 
 //reset the esp8266 module
 void reset() {
+   Serial.println("ALGOOOO");
   esp.println("AT+RST");
   delay(1000);
   if(esp.find("OK") ) Serial.println("Module Reset");
@@ -260,7 +261,7 @@ void readGps(){
 
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(4800);
   pinMode(tiltSensor, INPUT);
   pinMode(ultraSonicSenorEcho1, INPUT);
   pinMode(ultraSonicSenorEcho2, INPUT);
@@ -268,27 +269,29 @@ void setup() {
   pinMode(ultraSonicSenorTrigger2, OUTPUT);
   pingTimer1 = millis();
   pingTimer2 = millis();
-  softSerial.begin(9600);
+  softSerial.begin(19200);
   adxl.powerOn();            
   adxl.setRangeSetting(8);
   //wifi
   esp.begin(9600);
-  reset();
-  connectWifi();
+  //reset();
+  //connectWifi();
   // put your setup code here, to run once:
   
 }
 
 void loop() {
   //Serial.print()
-  if(bpCounter < bpLength){
+ /* if(bpCounter < bpLength){
     time = millis();
     checkTilt();
     checkProximity();
     checkZigZag();
     checkSpeed();
     printBpReport();
-  }
+  }*/
+  reset();
+  delay(500);
 }
 
 
