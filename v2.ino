@@ -17,8 +17,10 @@ String ssid ="yourSSID";
 String password="yourPassword";
 SoftwareSerial esp(6, 7);// RX, TX
 String data;
-String server = "yourServer"; // www.example.com
-String uri = "yourURI";// our example is /esppost.php
+string apiToken;
+string authToken;
+String server = "things.ubidots.com";
+String uri = "/api/v1.6/variables/5b006c77c03f97528bbaf5fb/values";
 
 struct badPractice
 {
@@ -105,11 +107,12 @@ void httppost () {
   if( esp.find("OK"))
     Serial.println("TCP connection ready");
   delay(1000);
-  String postRequest = "POST " + uri + " HTTP/1.0\r\n" +
+  String postRequest = "POST " + uri + " HTTP/1.1\r\n" +
                        "Host: " + server + "\r\n" +
-                       "Accept: *" + "/" + "*\r\n" +
-                       "Content-Length: " + data.length() + "\r\n" +
-                       "Content-Type: application/x-www-form-urlencoded\r\n" +
+                       "X-Auth-Token: " + authToken +"\r\n" +
+                       "Accept: application/json\r\n" +
+                       "Content-Type: application/json\r\n" +
+                       "Cache-Control: no-cache\r\n"
                        "\r\n" + data;
   String sendCmd = "AT+CIPSEND=";//determine the number of caracters to be sent.
   esp.print(sendCmd);
