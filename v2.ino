@@ -50,6 +50,10 @@ int accX, accY, accZ;
 
 //wifi
 Ubidots client(TOKEN);
+bool dataSent = false;
+
+//button or something  can be toggled
+const int buttonPin = 3;
 
 struct badPractice
 {
@@ -209,32 +213,50 @@ void setup() {
   pinMode(ultraSonicSenorEcho2, INPUT);
   pinMode(ultraSonicSenorTrigger1, OUTPUT);
   pinMode(ultraSonicSenorTrigger2, OUTPUT);
+  pinMode(buttonPin, INPUT);
   pingTimer1 = millis();
   pingTimer2 = millis();
   softSerial.begin(9600);
   adxl.powerOn();
   adxl.setRangeSetting(8);
-  //wifi
-  client.wifiConnection(WIFISSID, PASSWORD);
   // put your setup code here, to run once:
 
 }
 
 void loop() {
-  //Serial.print()
-  if(bpCounter < bpLength){
-    time = millis();
-    checkTilt();
-    checkProximity();
-    checkZigZag();
-    checkSpeed();
-    printBpReport();
-    /*
-    float value = analogRead(A0);
-    char context[25];
-    sprintf(context, "lat=1.2343$lng=132.1233"); // Sends latitude and longitude for watching position in a map
-    client.add(ID_1, value1, context);
-    client.sendAll(false);
-    */
+  // read the state of the pushbutton value:
+  buttonState = digitalRead(buttonPin);
+
+  // check if the pushbutton is pressed.
+  // if it is, the buttonState is HIGH:
+  if (buttonState == HIGH) {
+    //wifi
+    Serial.print("Conectando a red Wi-Fi " + WIFISSID);
+    client.wifiConnection(WIFISSID, PASSWORD);
+    delay(10000);
+    Serial.print("Red conectada: " + WIFISSID);
+    for(int i = 0; i < bpCounter; i++){
+      char context[25];
+      sprintf(context, "lat=%f$lng=%f$sensed=%f", bpReport[i].latitude, bpReport[i].longitude, bpReport[i].value);
+      client.add(ID_1, bpReport[i].bp, context);
+      client.sendAll(false);
+    }
+
+  }
+  else {
+    //Serial.print()
+    if(datasent){
+      Serial.print("Datos enviados, ejecución terminada");
+      delay(60000);
+    }else {
+      if(bpCounter < bpLength){
+        time = millis();
+        checkTilt();
+        checkProximity();
+        checkZigZag();
+        checkSpeed();
+        printBpReport();
+      }
+    }
   }
 }
