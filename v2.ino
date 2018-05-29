@@ -6,8 +6,8 @@
 
 #define TOKEN  "A1E-MEo1jXWG2exAIbnLHPagV1TrNfBGBN"  /* Put here your Ubidots TOKEN */
 #define ID_1 "5b006c77c03f97528bbaf5fb" /* Put your variable ID here */
-#define WIFISSID "Your_WiFi_SSID" /* Put here your Wi-Fi SSID */
-#define PASSWORD "Your_WiFi_Password" /* Put here your Wi-Fi password */
+#define WIFISSID "Luzsanti" /* Put here your Wi-Fi SSID */
+#define PASSWORD "$F4M1L14c4Rv$" /* Put here your Wi-Fi password */
 
 //Bad practice constants
 const byte tiltBp = 1;
@@ -22,9 +22,9 @@ const int ultraSonicSenorEcho2 = 8;
 const int ultraSonicSenorTrigger1 = 5;
 const int ultraSonicSenorTrigger2 = 7;
 //Umbral variables
-const int distanceUmbral = 50; // cm
-const int zigZagUmbral = 2;
-const int speedUmbral = 3;
+const int distanceUmbral = 6; // cm
+const int zigZagUmbral = 15;
+const int speedUmbral = 18;
 //Time
 unsigned long time;
 unsigned long waitTime = 3000;
@@ -49,11 +49,13 @@ ADXL345 adxl = ADXL345();
 int accX, accY, accZ;
 
 //wifi
+
 Ubidots client(TOKEN);
 bool dataSent = false;
 
 //button or something  can be toggled
 const int buttonPin = 3;
+
 
 struct badPractice
 {
@@ -62,7 +64,7 @@ struct badPractice
   float latitude;
   float longitude;
 };
-const byte bpLength = 20;
+const byte bpLength = 10;
 badPractice bpReport[bpLength];
 byte bpCounter = 0;
 
@@ -160,7 +162,8 @@ void echoCheck2() {
 }
 
 void printBpReport(){
-  if(time % 2000 == 0){
+  Serial.println("Yes");
+ // if(time % 2000 == 0){
     for(int i = 0; i < bpCounter; i++){
       Serial.print(i);
       Serial.print(" ");
@@ -178,8 +181,9 @@ void printBpReport(){
    Serial.println();
    Serial.println();
    //delay(2000);
-  }
+  //}
 }
+
 
 void readGps(){
    bool newData = false;
@@ -207,7 +211,7 @@ void readGps(){
 
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(4800);
   pinMode(tiltSensor, INPUT);
   pinMode(ultraSonicSenorEcho1, INPUT);
   pinMode(ultraSonicSenorEcho2, INPUT);
@@ -216,16 +220,20 @@ void setup() {
   pinMode(buttonPin, INPUT);
   pingTimer1 = millis();
   pingTimer2 = millis();
-  softSerial.begin(9600);
-  adxl.powerOn();
+  softSerial.begin(19200);
+  adxl.powerOn();            
   adxl.setRangeSetting(8);
+
+
   // put your setup code here, to run once:
 
 }
 
 void loop() {
+
   // read the state of the pushbutton value:
   buttonState = digitalRead(buttonPin);
+
 
   // check if the pushbutton is pressed.
   // if it is, the buttonState is HIGH:
@@ -255,8 +263,14 @@ void loop() {
         checkProximity();
         checkZigZag();
         checkSpeed();
-        printBpReport();
-      }
+        Serial.println(bpCounter);
+    
+        }else{
+          printBpReport();
+        }
+  //reset();
+  //delay(500);
+}
     }
   }
 }
