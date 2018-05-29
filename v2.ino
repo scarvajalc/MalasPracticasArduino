@@ -1,8 +1,13 @@
 #include <TinyGPS.h>
 #include <NewPing.h>
 #include <SoftwareSerial.h>
-#include <SparkFun_ADXL345.h> 
+#include <SparkFun_ADXL345.h>
+#include "UbidotsMicroESP8266.h"
 
+#define TOKEN  "A1E-MEo1jXWG2exAIbnLHPagV1TrNfBGBN"  /* Put here your Ubidots TOKEN */
+#define ID_1 "5b006c77c03f97528bbaf5fb" /* Put your variable ID here */
+#define WIFISSID "Luzsanti" /* Put here your Wi-Fi SSID */
+#define PASSWORD "$F4M1L14c4Rv$" /* Put here your Wi-Fi password */
 
 //Bad practice constants
 const byte tiltBp = 1;
@@ -23,8 +28,8 @@ const int speedUmbral = 18;
 //Time
 unsigned long time;
 unsigned long waitTime = 3000;
-unsigned long lastTiltOcurrence = -waitTime ; 
-unsigned long lastProximityOcurrence = -waitTime ; 
+unsigned long lastTiltOcurrence = -waitTime ;
+unsigned long lastProximityOcurrence = -waitTime ;
 unsigned long lastZigZagOcurrence = - waitTime;
 unsigned long lastSpeedOcurrence = - waitTime;
 //Link to NewPing tutorial https://bitbucket.org/teckel12/arduino-new-ping/wiki/Home#!event-timer-sketch
@@ -33,7 +38,7 @@ NewPing sonar(ultraSonicSenorTrigger1, ultraSonicSenorEcho1, maxDistance);
 NewPing sonar2(ultraSonicSenorTrigger2, ultraSonicSenorEcho2, maxDistance);
 unsigned int pingSpeed = 50; // How frequently are we going to send out a ping (in milliseconds). 50ms would be 20 times a second.
 unsigned long pingTimer1;
-unsigned long pingTimer2; 
+unsigned long pingTimer2;
 
 //GPS variables
 TinyGPS gps;
@@ -44,14 +49,13 @@ ADXL345 adxl = ADXL345();
 int accX, accY, accZ;
 
 //wifi
-String ssid ="Luzsanti";
-String password="$F4M1L14c4Rv$";
-SoftwareSerial esp(10, 11);// RX, TX
-String data;
-String apiToken;
-String authToken;
-String server = "things.ubidots.com";
-String uri = "/api/v1.6/variables/5b006c77c03f97528bbaf5fb/values";
+
+Ubidots client(TOKEN);
+bool dataSent = false;
+
+//button or something  can be toggled
+const int buttonPin = 3;
+
 
 struct badPractice
 {
@@ -79,9 +83,9 @@ void checkTilt(){
 }
 
 void checkZigZag(){
-  
+
   if(time > lastZigZagOcurrence + waitTime ){
-    adxl.readAccel(&accX, &accY, &accZ);  
+    adxl.readAccel(&accX, &accY, &accZ);
     if(accY > zigZagUmbral){
       readGps();
       lastZigZagOcurrence = time;
@@ -95,9 +99,9 @@ void checkZigZag(){
 }
 
 void checkSpeed(){
-  
+
   if(time > lastSpeedOcurrence + waitTime ){
-    adxl.readAccel(&accX, &accY, &accZ);  
+    adxl.readAccel(&accX, &accY, &accZ);
     if(accX > speedUmbral){
       readGps();
       lastSpeedOcurrence = time;
@@ -114,18 +118,18 @@ void checkSpeed(){
 void checkProximity(){
   if(time > lastProximityOcurrence + waitTime ){
       if (millis() >= pingTimer1) {
-        pingTimer1 += pingSpeed;  
+        pingTimer1 += pingSpeed;
         sonar.ping_timer(echoCheck);
       }
       if (millis() >= pingTimer2) {
-        pingTimer2 += pingSpeed;  
+        pingTimer2 += pingSpeed;
         sonar2.ping_timer(echoCheck2);
       }
-    
+
     }
 }
 
-void echoCheck() { 
+void echoCheck() {
   if (sonar.check_timer()) {
     if((sonar.ping_result / US_ROUNDTRIP_CM) < distanceUmbral){
       readGps();
@@ -136,12 +140,12 @@ void echoCheck() {
       bpReport[bpCounter].longitude = lon;
       bpCounter++;
     }
-    
+
   }
   // Don't do anything here!
 }
 
-void echoCheck2() { 
+void echoCheck2() {
   if (sonar2.check_timer()) {
     if((sonar2.ping_result / US_ROUNDTRIP_CM) < distanceUmbral){
       readGps();
@@ -152,7 +156,7 @@ void echoCheck2() {
       bpReport[bpCounter].longitude = lon;
       bpCounter++;
     }
-    
+
   }
   // Don't do anything here!
 }
@@ -166,7 +170,7 @@ void printBpReport(){
       Serial.print("MALA PRACTICA!! ");
       Serial.print(bpReport[i].bp );
       Serial.print(" ");
-      
+
       Serial.print(bpReport[i].value);
       Serial.print(" ");
       Serial.print(bpReport[i].latitude, 6);
@@ -180,72 +184,17 @@ void printBpReport(){
   //}
 }
 
-//WiFi Functions ===================================================================
-
-//reset the esp8266 module
-void reset() {
-   Serial.println("ALGOOOO");
-  esp.println("AT+RST");
-  delay(1000);
-  if(esp.find("OK") ) Serial.println("Module Reset");
-}
-
-//connect to your wifi network
-void connectWifi() {
-  String cmd = "AT+CWJAP=\"" +ssid+"\",\"" + password + "\"";
-  esp.println(cmd);
-  delay(4000);
-  if(esp.find("OK")) {
-    Serial.println("Connected!");
-  }
-  else {
-    connectWifi();
-    Serial.println("Cannot connect to wifi");
-  }
-}
-
-//send POST request
-void httppost () {
-  esp.println("AT+CIPSTART=\"TCP\",\"" + server + "\",80");//start a TCP connection.
-  if( esp.find("OK"))
-    Serial.println("TCP connection ready");
-  delay(1000);
-  String postRequest = "POST " + uri + " HTTP/1.1\r\n" +
-                       "Host: " + server + "\r\n" +
-                       "X-Auth-Token: " + authToken +"\r\n" +
-                       "Accept: application/json\r\n" +
-                       "Content-Type: application/json\r\n" +
-                       "Cache-Control: no-cache\r\n"
-                       "\r\n" + data;
-  String sendCmd = "AT+CIPSEND=";//determine the number of caracters to be sent.
-  esp.print(sendCmd);
-  esp.println(postRequest.length() );
-  delay(500);
-  if(esp.find(">")) {
-    Serial.println("Sending..");
-    esp.print(postRequest);
-    if( esp.find("SEND OK")) {
-      Serial.println("Packet sent");
-      while (esp.available()) {
-        String tmpResp = esp.readString();
-        Serial.println(tmpResp);
-      }
-      // close the connection
-      esp.println("AT+CIPCLOSE");
-    }
-  }
-}
 
 void readGps(){
    bool newData = false;
    unsigned long chars;
    unsigned short sentences, failed;
-   
+
    // Intentar recibir secuencia durante un segundo
 
     while (softSerial.available())
     {
-      
+
        char c = softSerial.read();
        //Serial.println(c);
        if (gps.encode(c)){ // Nueva secuencia recibida
@@ -254,9 +203,9 @@ void readGps(){
     }
 
    if (newData)
-   {
+   {A1E-MEo1jXWG2exAIbnLHPagV1TrNfBGBN
       gps.f_get_position(&lat, &lon);
-      
+
    }
 }
 
@@ -268,34 +217,60 @@ void setup() {
   pinMode(ultraSonicSenorEcho2, INPUT);
   pinMode(ultraSonicSenorTrigger1, OUTPUT);
   pinMode(ultraSonicSenorTrigger2, OUTPUT);
+  pinMode(buttonPin, INPUT);
   pingTimer1 = millis();
   pingTimer2 = millis();
   softSerial.begin(19200);
   adxl.powerOn();            
   adxl.setRangeSetting(8);
-  //wifi
-  esp.begin(9600);
-  //reset();
-  //connectWifi();
+
+
   // put your setup code here, to run once:
-  
+
 }
 
 void loop() {
-  //Serial.print()
- if(bpCounter < bpLength){
-    time = millis();
-    checkTilt();
-    checkProximity();
-    checkZigZag();
-    checkSpeed();
-    Serial.println(bpCounter);
-    
-  }else{
-    printBpReport();
+
+  // read the state of the pushbutton value:
+  buttonState = digitalRead(buttonPin);
+
+
+  // check if the pushbutton is pressed.
+  // if it is, the buttonState is HIGH:
+  if (buttonState == HIGH) {
+    //wifi
+    Serial.print("Conectando a red Wi-Fi " + WIFISSID);
+    client.wifiConnection(WIFISSID, PASSWORD);
+    delay(10000);
+    Serial.print("Red conectada: " + WIFISSID);
+    for(int i = 0; i < bpCounter; i++){
+      char context[25];
+      sprintf(context, "lat=%f$lng=%f$sensed=%f", bpReport[i].latitude, bpReport[i].longitude, bpReport[i].value);
+      client.add(ID_1, bpReport[i].bp, context);
+      client.sendAll(false);
+    }
+
   }
+  else {
+    //Serial.print()
+    if(datasent){
+      Serial.print("Datos enviados, ejecución terminada");
+      delay(60000);
+    }else {
+      if(bpCounter < bpLength){
+        time = millis();
+        checkTilt();
+        checkProximity();
+        checkZigZag();
+        checkSpeed();
+        Serial.println(bpCounter);
+    
+        }else{
+          printBpReport();
+        }
   //reset();
   //delay(500);
 }
-
-
+    }
+  }
+}
