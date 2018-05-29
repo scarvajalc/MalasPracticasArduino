@@ -17,9 +17,9 @@ const int ultraSonicSenorEcho2 = 8;
 const int ultraSonicSenorTrigger1 = 5;
 const int ultraSonicSenorTrigger2 = 7;
 //Umbral variables
-const int distanceUmbral = 50; // cm
-const int zigZagUmbral = 2;
-const int speedUmbral = 3;
+const int distanceUmbral = 6; // cm
+const int zigZagUmbral = 15;
+const int speedUmbral = 18;
 //Time
 unsigned long time;
 unsigned long waitTime = 3000;
@@ -60,7 +60,7 @@ struct badPractice
   float latitude;
   float longitude;
 };
-const byte bpLength = 20;
+const byte bpLength = 10;
 badPractice bpReport[bpLength];
 byte bpCounter = 0;
 
@@ -158,7 +158,8 @@ void echoCheck2() {
 }
 
 void printBpReport(){
-  if(time % 2000 == 0){
+  Serial.println("Yes");
+ // if(time % 2000 == 0){
     for(int i = 0; i < bpCounter; i++){
       Serial.print(i);
       Serial.print(" ");
@@ -176,7 +177,7 @@ void printBpReport(){
    Serial.println();
    Serial.println();
    //delay(2000);
-  }
+  //}
 }
 
 //WiFi Functions ===================================================================
@@ -282,16 +283,19 @@ void setup() {
 
 void loop() {
   //Serial.print()
- /* if(bpCounter < bpLength){
+ if(bpCounter < bpLength){
     time = millis();
     checkTilt();
     checkProximity();
     checkZigZag();
     checkSpeed();
+    Serial.println(bpCounter);
+    
+  }else{
     printBpReport();
-  }*/
-  reset();
-  delay(500);
+  }
+  //reset();
+  //delay(500);
 }
 
 
