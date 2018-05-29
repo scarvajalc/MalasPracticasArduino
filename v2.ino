@@ -43,6 +43,14 @@ ADXL345 adxl = ADXL345();
 int accX, accY, accZ;
 
 //wifi
+String ssid ="Luzsanti";
+String password="$F4M1L14c4Rv$";
+SoftwareSerial esp(10, 11);// RX, TX
+String data;
+String apiToken;
+String authToken;
+String server = "things.ubidots.com";
+String uri = "/api/v1.6/variables/5b006c77c03f97528bbaf5fb/values";
 bool dataSent = false;
 
 //button or something that can be toggled
@@ -201,6 +209,29 @@ void readGps(){
   }
 }
 
+//Wi-Fi ESP8266
+
+//reset the esp8266 module
+void reset() {
+   Serial.println("ALGOOOO");
+  esp.println("AT+RST");
+  delay(1000);
+  if(esp.find("OK") ) Serial.println("Module Reset");
+}
+
+//connect to your wifi network
+void connectWifi() {
+  String cmd = "AT+CWJAP=\"" +ssid+"\",\"" + password + "\"";
+  esp.println(cmd);
+  delay(4000);
+  if(esp.find("OK")) {
+    Serial.println("Connected!");
+  }
+  else {
+    connectWifi();
+    Serial.println("Cannot connect to wifi");
+  }
+}
 
 void setup() {
   Serial.begin(4800);
@@ -215,7 +246,8 @@ void setup() {
   softSerial.begin(19200);
   adxl.powerOn();
   adxl.setRangeSetting(8);
-
+  //wifi
+  esp.begin(9600);
 
   // put your setup code here, to run once:
 
@@ -231,7 +263,45 @@ void loop() {
   // if it is, the buttonState is HIGH:
   if (buttonState == HIGH) {
     //wifi
+    reset();
+    connectWifi();
     for(int i = 0; i < bpCounter; i++){
+      data = "{
+        \"value\":" + String(bpReport[i].bp) + ",
+        \"context\":{
+          \"sensed\":" + String(bpReport[i].value) + ",
+          \"lat\":" + String(bpReport[i].latitude) + ",
+          \"lng\"" + String(bpReport[i].longitude) + ":
+        }
+      }"
+      esp.println("AT+CIPSTART=\"TCP\",\"" + server + "\",80");//start a TCP connection.
+      if( esp.find("OK"))
+        Serial.println("TCP connection ready");
+      delay(1000);
+      String postRequest = "POST " + uri + " HTTP/1.1\r\n" +
+                           "Host: " + server + "\r\n" +
+                           "X-Auth-Token: " + authToken +"\r\n" +
+                           "Accept: application/json\r\n" +
+                           "Content-Type: application/json\r\n" +
+                           "Cache-Control: no-cache\r\n"
+                           "\r\n" + data;
+      String sendCmd = "AT+CIPSEND="+String(postRequest.length());//determine the number of caracters to be sent.
+      esp.print(sendCmd);
+      esp.println(postRequest.length() );
+      delay(500);
+      if(esp.find(">")) {
+        Serial.println("Sending..");
+        esp.print(postRequest);
+        if( esp.find("SEND OK")) {
+          Serial.println("Packet sent");
+          while (esp.available()) {
+            String tmpResp = esp.readString();
+            Serial.println(tmpResp);
+          }
+          // close the connection
+          esp.println("AT+CIPCLOSE");
+        }
+      }
     }
 
   }
