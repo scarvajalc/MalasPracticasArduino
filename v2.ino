@@ -1,8 +1,9 @@
+#include <UbidotsESP8266.h>
 #include <TinyGPS.h>
 #include <NewPing.h>
 #include <SoftwareSerial.h>
 #include <SparkFun_ADXL345.h>
-#include "UbidotsMicroESP8266.h"
+
 
 #define TOKEN  "A1E-MEo1jXWG2exAIbnLHPagV1TrNfBGBN"  /* Put here your Ubidots TOKEN */
 #define ID_1 "5b006c77c03f97528bbaf5fb" /* Put your variable ID here */
