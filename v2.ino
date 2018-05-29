@@ -1,14 +1,7 @@
-#include <UbidotsESP8266.h>
 #include <TinyGPS.h>
 #include <NewPing.h>
 #include <SoftwareSerial.h>
 #include <SparkFun_ADXL345.h>
-
-
-#define TOKEN  "A1E-MEo1jXWG2exAIbnLHPagV1TrNfBGBN"  /* Put here your Ubidots TOKEN */
-#define ID_1 "5b006c77c03f97528bbaf5fb" /* Put your variable ID here */
-#define WIFISSID "Luzsanti" /* Put here your Wi-Fi SSID */
-#define PASSWORD "$F4M1L14c4Rv$" /* Put here your Wi-Fi password */
 
 //Bad practice constants
 const byte tiltBp = 1;
@@ -50,11 +43,9 @@ ADXL345 adxl = ADXL345();
 int accX, accY, accZ;
 
 //wifi
-
-Ubidots client(TOKEN);
 bool dataSent = false;
 
-//button or something  can be toggled
+//button or something that can be toggled
 const int buttonPin = 3;
 
 
@@ -118,16 +109,16 @@ void checkSpeed(){
 
 void checkProximity(){
   if(time > lastProximityOcurrence + waitTime ){
-      if (millis() >= pingTimer1) {
-        pingTimer1 += pingSpeed;
-        sonar.ping_timer(echoCheck);
-      }
-      if (millis() >= pingTimer2) {
-        pingTimer2 += pingSpeed;
-        sonar2.ping_timer(echoCheck2);
-      }
-
+    if (millis() >= pingTimer1) {
+      pingTimer1 += pingSpeed;
+      sonar.ping_timer(echoCheck);
     }
+    if (millis() >= pingTimer2) {
+      pingTimer2 += pingSpeed;
+      sonar2.ping_timer(echoCheck2);
+    }
+
+  }
 }
 
 void echoCheck() {
@@ -164,50 +155,50 @@ void echoCheck2() {
 
 void printBpReport(){
   Serial.println("Yes");
- // if(time % 2000 == 0){
-    for(int i = 0; i < bpCounter; i++){
-      Serial.print(i);
-      Serial.print(" ");
-      Serial.print("MALA PRACTICA!! ");
-      Serial.print(bpReport[i].bp );
-      Serial.print(" ");
+  // if(time % 2000 == 0){
+  for(int i = 0; i < bpCounter; i++){
+    Serial.print(i);
+    Serial.print(" ");
+    Serial.print("MALA PRACTICA!! ");
+    Serial.print(bpReport[i].bp );
+    Serial.print(" ");
 
-      Serial.print(bpReport[i].value);
-      Serial.print(" ");
-      Serial.print(bpReport[i].latitude, 6);
-      Serial.print(" ");
-      Serial.print(bpReport[i].longitude, 6);
-      Serial.println();
-   }
-   Serial.println();
-   Serial.println();
-   //delay(2000);
+    Serial.print(bpReport[i].value);
+    Serial.print(" ");
+    Serial.print(bpReport[i].latitude, 6);
+    Serial.print(" ");
+    Serial.print(bpReport[i].longitude, 6);
+    Serial.println();
+  }
+  Serial.println();
+  Serial.println();
+  //delay(2000);
   //}
 }
 
 
 void readGps(){
-   bool newData = false;
-   unsigned long chars;
-   unsigned short sentences, failed;
+  bool newData = false;
+  unsigned long chars;
+  unsigned short sentences, failed;
 
-   // Intentar recibir secuencia durante un segundo
+  // Intentar recibir secuencia durante un segundo
 
-    while (softSerial.available())
-    {
+  while (softSerial.available())
+  {
 
-       char c = softSerial.read();
-       //Serial.println(c);
-       if (gps.encode(c)){ // Nueva secuencia recibida
-          newData = true;
-        }
+    char c = softSerial.read();
+    //Serial.println(c);
+    if (gps.encode(c)){ // Nueva secuencia recibida
+      newData = true;
     }
+  }
 
-   if (newData)
-   {A1E-MEo1jXWG2exAIbnLHPagV1TrNfBGBN
-      gps.f_get_position(&lat, &lon);
+  if (newData)
+  {A1E-MEo1jXWG2exAIbnLHPagV1TrNfBGBN
+    gps.f_get_position(&lat, &lon);
 
-   }
+  }
 }
 
 
@@ -222,7 +213,7 @@ void setup() {
   pingTimer1 = millis();
   pingTimer2 = millis();
   softSerial.begin(19200);
-  adxl.powerOn();            
+  adxl.powerOn();
   adxl.setRangeSetting(8);
 
 
@@ -240,15 +231,7 @@ void loop() {
   // if it is, the buttonState is HIGH:
   if (buttonState == HIGH) {
     //wifi
-    Serial.print("Conectando a red Wi-Fi " + WIFISSID);
-    client.wifiConnection(WIFISSID, PASSWORD);
-    delay(10000);
-    Serial.print("Red conectada: " + WIFISSID);
     for(int i = 0; i < bpCounter; i++){
-      char context[25];
-      sprintf(context, "lat=%f$lng=%f$sensed=%f", bpReport[i].latitude, bpReport[i].longitude, bpReport[i].value);
-      client.add(ID_1, bpReport[i].bp, context);
-      client.sendAll(false);
     }
 
   }
@@ -265,13 +248,13 @@ void loop() {
         checkZigZag();
         checkSpeed();
         Serial.println(bpCounter);
-    
-        }else{
-          printBpReport();
-        }
-  //reset();
-  //delay(500);
-}
+
+      }else{
+        printBpReport();
+      }
+      //reset();
+      //delay(500);
     }
   }
+}
 }
